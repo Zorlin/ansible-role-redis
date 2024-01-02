@@ -3,3 +3,9 @@
   apt:
     name: "{{ redis_package }}"
     state: present
+  when:
+    - not redis_install_from_source | bool
+
+- name: Install Redis from source.
+  include_tasks: install-from-source.yml
+  when: install_from_source | bool

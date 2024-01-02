@@ -1,0 +1,63 @@
+---
+- name: Include OS-specific variables (RedHat).
+  include_vars: "{{ ansible_os_family }}.yml"
+  when:
+    - ansible_os_family == "RedHat"
+    - ansible_distribution != "Fedora"
+
+- name: Include OS-specific variables (Fedora).
+  include_vars: "{{ ansible_distribution }}.yml"
+  when: ansible_distribution == "Fedora"
+
+- name: Include OS-specific variables (Debian).
+  include_vars: "{{ ansible_os_family }}.yml"
+  when: ansible_os_family == "Debian"
+
+- name: Define redis_install_from_source_dependencies.
+  set_fact:
+    redis_install_from_source_dependencies: "{{ __redis_install_from_source_dependencies | list }}"
+  when: redis_install_from_source_dependencies is not defined
+
+- name: Ensure Redis' dependencies are installed.
+  package:
+    name: "{{ redis_install_from_source_dependencies }}"
+    state: present
+
+- name: Get installed version.
+  command: redis-cli --version
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: redis_installed_version
+
+- name: Force redis install if the version numbers do not match.
+  set_fact:
+    redis_reinstall_from_source: true
+  when:
+    - redis_install_from_source_force_update | bool
+    - (redis_installed_version.rc == 0) and (redis_installed_version.stdout | regex_replace("^.*?([0-9\.]+)$", "\\1") is version(redis_version, operator="!="))
+
+- name: Download redis.
+  get_url:
+    url: "https://download.redis.io/releases/redis-{{ redis_version }}.tar.gz"
+    dest: "{{ workspace }}/redis-{{ redis_version }}.tar.gz"
+  when: (redis_installed_version.rc != 0) or (redis_reinstall_from_source | bool)
+
+- name: Expand redis archive.
+  unarchive:
+    src: "{{ workspace }}/redis-{{ redis_version }}.tar.gz"
+    dest: "{{ workspace }}"
+    creates: "{{ workspace }}/redis-{{ redis_version }}/README.md"
+    copy: false
+    mode: 0755
+  when: (redis_installed_version.rc != 0) or (redis_reinstall_from_source | bool)
+
+- name: Build redis.
+  command: >
+    make prefix={{ redis_install_path }} {{ item }}
+    chdir={{ workspace }}/redis-{{ redis_version }}
+  with_items:
+    - all
+    - install
+  when: (redis_installed_version.rc != 0) or (redis_reinstall_from_source | bool)
+  become: true

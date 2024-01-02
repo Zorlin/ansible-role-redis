@@ -4,3 +4,5 @@
     name: "{{ redis_package }}"
     state: present
     enablerepo: "{{ redis_enablerepo | default(omit, true) }}"
+  when:
+    - not redis_install_from_source | bool
