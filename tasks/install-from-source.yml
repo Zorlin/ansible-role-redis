@@ -86,6 +86,15 @@
     mode: 0750
   become: true
 
+- name: Ensure Redis log directory exists and is owned by redis
+  file:
+    path: "{{ redis_logdir }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: 0750
+  become: true
+
 - name: Install Redis systemd unit
   template:
     src: redis-server.service.j2
@@ -93,3 +102,10 @@
     mode: 0644
   notify: restart redis
   become: true
+
+- name: Ensure Redis is running and enabled on boot.
+  systemd:
+    name: redis-server
+    state: started
+    enabled: true
+    reload: true
