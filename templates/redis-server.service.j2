@@ -8,6 +8,7 @@ ExecStop={{ redis_install_path }}/bin/redis-cli shutdown
 Restart=always
 User=redis
 Group=redis
+Type=forking
 
 [Install]
 WantedBy=multi-user.target
