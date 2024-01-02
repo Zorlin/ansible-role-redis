@@ -108,4 +108,4 @@
     name: redis-server
     state: started
     enabled: true
-    reload: true
+    daemon_reload: true
