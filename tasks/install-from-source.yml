@@ -61,3 +61,35 @@
     - install
   when: (redis_installed_version.rc != 0) or (redis_reinstall_from_source | bool)
   become: true
+
+- name: Ensure Redis user and group exist
+  group:
+    name: redis
+    state: present
+  become: true
+
+- name: Ensure Redis user and group exist
+  user:
+    name: redis
+    group: redis
+    state: present
+    system: true
+    shell: /bin/false
+  become: true
+
+- name: Ensure Redis data directory exists and is owned by redis
+  file:
+    path: "{{ redis_dbdir }}"
+    state: directory
+    owner: redis
+    group: redis
+    mode: 0750
+  become: true
+
+- name: Install Redis systemd unit
+  template:
+    src: redis-server.service.j2
+    dest: /etc/systemd/system/redis-server.service
+    mode: 0644
+  notify: restart redis
+  become: true
