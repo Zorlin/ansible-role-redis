@@ -5,6 +5,7 @@ redis_enablerepo: epel
 # Whether to install from source
 redis_install_from_source: false
 workspace: /usr/local/src/ # Where to download and build Redis if installing from source.
+redis_install_path: /usr/local # Where to install Redis if installing from source.
 # If we are running a different version, whether to force an update
 redis_install_from_source_force_update: false
 
